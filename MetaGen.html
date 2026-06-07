@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MetaGen — Stock Metadata AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0b0a08;--sf:#12100d;--sf2:#1a1714;--sf3:#231e18;
+  --bd:rgba(245,190,80,0.07);--bd2:rgba(245,190,80,0.14);
+  --ac:#e8a832;--acd:rgba(232,168,50,0.10);--ac2:#e8845a;
+  --tx:#f0ebe3;--txd:#b0a494;--txm:#6b5f52;
+  --er:#f87171;--wa:#fbbf24;--ok:#34d399;
+  --r:10px;--rs:6px;
+  /* Keyword Rank Colors — imsStudio standard */
+  --kw-violet:#b48eff;--kw-violet-bg:rgba(180,142,255,0.12);--kw-violet-bd:rgba(180,142,255,0.35);
+  --kw-blue:#38bdf8;--kw-blue-bg:rgba(56,189,248,0.12);--kw-blue-bd:rgba(56,189,248,0.35);
+  --kw-green:#34d399;--kw-green-bg:rgba(52,211,153,0.12);--kw-green-bd:rgba(52,211,153,0.35);
+  --kw-yellow:#fbbf24;--kw-yellow-bg:rgba(251,191,36,0.1);--kw-yellow-bd:rgba(251,191,36,0.3);
+  --kw-gray:#64748b;--kw-gray-bg:rgba(100,116,139,0.08);--kw-gray-bd:rgba(100,116,139,0.25);
+  --kw-white:#94a3b8;--kw-white-bg:rgba(148,163,184,0.05);--kw-white-bd:rgba(148,163,184,0.18);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* HEADER */
+header{display:flex;align-items:center;gap:10px;padding:9px 16px;background:var(--sf);border-bottom:1px solid var(--bd);flex-shrink:0;flex-wrap:wrap;}
+.logo{display:flex;align-items:center;gap:9px;flex-shrink:0;margin-right:4px;}
+.logo-ico{width:32px;height:32px;background:linear-gradient(135deg,var(--ac),var(--ac2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:800;color:#000;}
+.logo-tx{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:800;background:linear-gradient(90deg,#fff 30%,var(--ac));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-size:9px;color:var(--txm);letter-spacing:1px;text-transform:uppercase;}
+
+.prov-grp{display:flex;gap:3px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:3px;flex-shrink:0;}
+.prov-btn{padding:5px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--txm);transition:all .2s;font-family:'Inter',sans-serif;white-space:nowrap;}
+.prov-btn.on{color:#000;font-weight:800;}
+.prov-btn[data-p=claude].on{background:var(--ac);}
+.prov-btn[data-p=openai].on{background:#10a37f;color:#fff;}
+.prov-btn[data-p=gemini].on{background:#4285f4;color:#fff;}
+.prov-btn:hover:not(.on){color:var(--txd);}
+
+.api-row{display:flex;align-items:center;gap:7px;flex:1;min-width:200px;}
+.api-lbl{font-size:10px;color:var(--txm);white-space:nowrap;letter-spacing:.4px;text-transform:uppercase;}
+.api-wrap{position:relative;flex:1;}
+.api-inp{width:100%;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:6px 32px 6px 10px;border-radius:var(--rs);font-size:11.5px;font-family:'JetBrains Mono',monospace;transition:border-color .2s;letter-spacing:.4px;}
+.api-inp:focus{outline:none;border-color:var(--ac);}
+.api-inp::placeholder{color:var(--txm);font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0;}
+.api-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--txm);font-size:12px;user-select:none;}
+.api-eye:hover{color:var(--txd);}
+.api-dot{width:7px;height:7px;border-radius:50%;background:var(--txm);flex-shrink:0;transition:all .3s;}
+.api-dot.ok{background:var(--ok);box-shadow:0 0 6px rgba(52,211,153,.5);}
+.api-dot.err{background:var(--er);}
+.btn-sm{padding:5px 11px;border-radius:var(--rs);font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);white-space:nowrap;transition:all .2s;font-family:'Inter',sans-serif;}
+.btn-sm:hover{border-color:var(--ac);color:var(--ac);}
+
+/* MAIN */
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:296px;background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+.tabs{display:flex;border-bottom:1px solid var(--bd);flex-shrink:0;}
+.tab{flex:1;padding:8px 4px;text-align:center;font-size:10.5px;font-weight:700;color:var(--txm);cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.8px;border-bottom:2px solid transparent;}
+.tab.on{color:var(--ac);border-bottom-color:var(--ac);}
+.panel{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:16px;}
+.panel::-webkit-scrollbar{width:3px;}
+.panel::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+
+.s-blk{display:flex;flex-direction:column;gap:7px;}
+.s-hd{font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:var(--ac);display:flex;align-items:center;gap:4px;}
+.s-desc{font-size:10px;color:var(--txm);line-height:1.4;margin-top:-3px;}
+
+.sl-box{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:8px 10px;display:flex;flex-direction:column;gap:5px;}
+.sl-top{display:flex;justify-content:space-between;align-items:center;}
+.sl-lbl{font-size:11px;color:var(--txd);}
+.sl-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ac);font-weight:500;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;background:var(--bd2);border-radius:3px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--ac);box-shadow:0 0 8px rgba(0,229,160,.35);}
+
+.tog-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);}
+.tog-inf{display:flex;flex-direction:column;gap:1px;}
+.tog-nm{font-size:11.5px;font-weight:600;}
+.tog-ds{font-size:9.5px;color:var(--txm);}
+.tog{width:32px;height:17px;background:var(--bd2);border-radius:9px;cursor:pointer;transition:background .2s;position:relative;flex-shrink:0;}
+.tog.on{background:var(--ac);}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .2s;}
+.tog.on::after{left:17px;}
+
+.t-inp{background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:6px 10px;border-radius:var(--rs);font-size:12px;width:100%;transition:border-color .2s;font-family:'Inter',sans-serif;}
+.t-inp:focus{outline:none;border-color:var(--ac);}
+.t-inp::placeholder{color:var(--txm);font-size:11px;}
+.inp-lbl{font-size:10px;color:var(--txm);margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+select{background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:6px 10px;border-radius:var(--rs);font-size:12px;width:100%;cursor:pointer;font-family:'Inter',sans-serif;transition:border-color .2s;}
+select:focus{outline:none;border-color:var(--ac);}
+select option{background:var(--sf2);}
+
+.plat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
+.plat-it{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);cursor:pointer;transition:all .15s;}
+.plat-it:hover{border-color:var(--bd2);}
+.plat-it.on{border-color:var(--ac);background:var(--acd);}
+.plat-ic{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;}
+.plat-nm{font-size:8px;color:var(--txm);text-align:center;line-height:1.2;}
+.plat-it.on .plat-nm{color:var(--txd);}
+
+.info-box{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:9px 11px;display:flex;flex-direction:column;gap:5px;}
+.info-box .ib-title{font-size:11px;font-weight:700;color:var(--tx);}
+.info-box .ib-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;}
+.info-box .ib-row span:first-child{color:var(--txm);}
+.info-box .ib-row span:last-child{font-family:'JetBrains Mono',monospace;color:var(--ac2);font-size:9.5px;}
+.info-box .ib-note{font-size:9.5px;color:var(--txm);line-height:1.4;border-top:1px solid var(--bd);padding-top:5px;margin-top:2px;}
+.info-box .ib-note.warn{color:var(--wa);}
+.btn-match{padding:5px 10px;border-radius:var(--rs);font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--ac);background:var(--acd);color:var(--ac);width:100%;transition:all .2s;font-family:'Inter',sans-serif;}
+.btn-match:hover{background:var(--ac);color:#000;}
+
+.s-foot{padding:10px 13px;border-top:1px solid var(--bd);display:flex;gap:6px;flex-shrink:0;}
+.btn-gen{flex:1;padding:9px;border-radius:var(--rs);font-size:13px;font-weight:800;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--ac);color:#000;transition:all .2s;font-family:'Space Grotesk',sans-serif;}
+.btn-gen:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-gen:disabled{opacity:.3;cursor:not-allowed;transform:none;}
+.btn-csv{padding:9px 11px;border-radius:var(--rs);font-size:11.5px;font-weight:700;cursor:pointer;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);display:flex;align-items:center;gap:4px;transition:all .2s;font-family:'Inter',sans-serif;white-space:nowrap;}
+.btn-csv:hover:not(:disabled){border-color:var(--ac2);color:var(--ac2);}
+.btn-csv:disabled{opacity:.3;cursor:not-allowed;}
+
+/* CONTENT */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+.drop-zone{margin:14px 14px 8px;border:1.5px dashed var(--bd2);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;transition:all .2s;background:var(--sf);flex-shrink:0;}
+.drop-zone:hover,.drop-zone.over{border-color:var(--ac);background:var(--acd);}
+.drop-ico{width:42px;height:42px;margin:0 auto 9px;background:rgba(0,229,160,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.drop-ico svg{width:19px;height:19px;stroke:var(--ac);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.drop-title{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px;}
+.drop-sub{font-size:10.5px;color:var(--txm);margin-bottom:9px;}
+.fmt-row{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;}
+.fmt{padding:2px 7px;background:var(--sf2);border:1px solid var(--bd2);border-radius:3px;font-size:9px;color:var(--txm);font-family:'JetBrains Mono',monospace;}
+
+.chip-bar{margin:0 14px 6px;display:flex;gap:5px;flex-wrap:wrap;min-height:0;}
+.chip{display:flex;align-items:center;gap:5px;padding:3px 7px 3px 4px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;font-size:10px;}
+.chip img{width:17px;height:17px;border-radius:3px;object-fit:cover;}
+.cdot{width:5px;height:5px;border-radius:50%;background:var(--txm);flex-shrink:0;}
+.cdot.run{background:var(--wa);animation:blink 1s infinite;}
+.cdot.ok{background:var(--ok);}
+.cdot.err{background:var(--er);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.chip-x{cursor:pointer;color:var(--txm);font-size:11px;transition:color .15s;}
+.chip-x:hover{color:var(--er);}
+
+.prog-wrap{height:2px;background:var(--bd);margin:0 14px 6px;border-radius:1px;overflow:hidden;flex-shrink:0;display:none;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:1px;transition:width .35s;width:0%;}
+
+.res-wrap{flex:1;overflow:hidden;margin:0 14px 14px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);display:flex;flex-direction:column;}
+.res-hd{padding:7px 13px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.res-title{font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--txm);}
+.res-ct{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--txm);}
+.res-scroll{flex:1;overflow:auto;}
+.res-scroll::-webkit-scrollbar{width:3px;height:3px;}
+.res-scroll::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--txm);font-size:11.5px;padding:30px;}
+.empty-ico{font-size:26px;opacity:.2;margin-bottom:3px;}
+
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead th{padding:6px 10px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txm);background:var(--sf2);position:sticky;top:0;border-bottom:1px solid var(--bd);white-space:nowrap;z-index:1;}
+tbody tr{border-bottom:1px solid rgba(28,45,72,.4);transition:background .12s;}
+tbody tr:hover{background:var(--sf2);}
+tbody td{padding:8px 10px;vertical-align:top;line-height:1.45;}
+.td-file{display:flex;align-items:center;gap:6px;}
+.td-thumb{width:28px;height:28px;border-radius:4px;object-fit:cover;border:1px solid var(--bd);flex-shrink:0;}
+.td-nm{max-width:80px;overflow:hidden;text-overflow:ellipsis;color:var(--txd);font-size:10px;white-space:nowrap;}
+.td-title{max-width:180px;color:var(--tx);}
+.td-title-inner{display:flex;flex-direction:column;gap:3px;}
+.char-badge{font-family:'JetBrains Mono',monospace;font-size:8.5px;padding:1px 5px;border-radius:3px;background:var(--sf3);color:var(--txm);display:inline-block;}
+.char-badge.ok{color:var(--ok);}
+.char-badge.warn{color:var(--wa);}
+.char-badge.err{color:var(--er);background:rgba(248,113,113,.1);}
+.td-desc{max-width:200px;color:var(--txd);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:10.5px;}
+
+/* KEYWORD RANK SYSTEM — imsStudio Standard */
+.kw-wrap{display:flex;flex-wrap:wrap;gap:3px;max-width:260px;}
+.kw{padding:2px 6px 2px 4px;border-radius:4px;font-size:9px;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;transition:all .15s;cursor:default;position:relative;}
+.kw:hover{filter:brightness(1.2);transform:translateY(-1px);}
+.kw-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block;}
+/* Rank: Violet — Excellent */
+.kw.rank-violet{background:var(--kw-violet-bg);border:1px solid var(--kw-violet-bd);color:var(--kw-violet);}
+.kw.rank-violet .kw-dot{background:var(--kw-violet);box-shadow:0 0 4px var(--kw-violet);}
+/* Rank: Blue — Good */
+.kw.rank-blue{background:var(--kw-blue-bg);border:1px solid var(--kw-blue-bd);color:var(--kw-blue);}
+.kw.rank-blue .kw-dot{background:var(--kw-blue);box-shadow:0 0 4px var(--kw-blue);}
+/* Rank: Green — Normal */
+.kw.rank-green{background:var(--kw-green-bg);border:1px solid var(--kw-green-bd);color:var(--kw-green);}
+.kw.rank-green .kw-dot{background:var(--kw-green);box-shadow:0 0 4px var(--kw-green);}
+/* Rank: Yellow — Mediocre */
+.kw.rank-yellow{background:var(--kw-yellow-bg);border:1px solid var(--kw-yellow-bd);color:var(--kw-yellow);}
+.kw.rank-yellow .kw-dot{background:var(--kw-yellow);}
+/* Rank: Gray — Bad */
+.kw.rank-gray{background:var(--kw-gray-bg);border:1px solid var(--kw-gray-bd);color:var(--kw-gray);}
+.kw.rank-gray .kw-dot{background:var(--kw-gray);}
+/* Rank: White — Unknown */
+.kw.rank-white{background:var(--kw-white-bg);border:1px solid var(--kw-white-bd);color:var(--kw-white);}
+.kw.rank-white .kw-dot{background:var(--kw-white);}
+
+/* Keyword overflow badge */
+.kw-more{padding:2px 6px;border-radius:4px;font-size:8.5px;background:var(--sf3);border:1px solid var(--bd2);color:var(--txm);cursor:pointer;transition:all .15s;font-family:'JetBrains Mono',monospace;}
+.kw-more:hover{border-color:var(--ac);color:var(--ac);}
+
+/* Keyword Legend */
+.kw-legend{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);}
+.kw-legend-item{display:flex;align-items:center;gap:3px;font-size:8.5px;color:var(--txd);}
+.kw-legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* Keyword Stats Bar */
+.kw-stats{display:flex;gap:4px;margin-top:4px;align-items:center;}
+.kw-stat-bar{flex:1;height:4px;background:var(--bd);border-radius:2px;overflow:hidden;display:flex;}
+.kw-stat-seg{height:100%;transition:width .4s ease;}
+.kw-stat-ct{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--txm);white-space:nowrap;}
+
+.edit-btn{font-size:11px;cursor:pointer;color:var(--txm);transition:color .15s;background:none;border:none;padding:0;font-family:inherit;white-space:nowrap;}
+.edit-btn:hover{color:var(--ac);}
+
+/* NOTIFICATION */
+.notif{position:fixed;bottom:16px;right:16px;padding:8px 13px;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r);font-size:11.5px;display:flex;align-items:center;gap:7px;z-index:200;max-width:300px;box-shadow:0 4px 24px rgba(0,0,0,.5);animation:slideUp .3s ease;}
+.notif.ok{border-color:var(--ok);}
+.notif.err{border-color:var(--er);}
+@keyframes slideUp{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal{background:var(--sf);border:1px solid var(--bd2);border-radius:11px;width:620px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;}
+.modal-hd{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
+.modal-ttl{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;}
+.modal-x{cursor:pointer;color:var(--txm);font-size:17px;line-height:1;transition:color .15s;}
+.modal-x:hover{color:var(--tx);}
+.modal-body{padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:13px;flex:1;}
+.modal-body::-webkit-scrollbar{width:3px;}
+.modal-body::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+.m-lbl{font-size:10px;color:var(--txm);margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.m-txt{width:100%;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:8px 10px;border-radius:var(--rs);font-size:11.5px;font-family:'Inter',sans-serif;resize:vertical;min-height:55px;line-height:1.5;transition:border-color .2s;}
+.m-txt:focus{outline:none;border-color:var(--ac);}
+.m-char{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--txm);text-align:right;margin-top:2px;}
+.modal-ft{padding:10px 16px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:7px;}
+.btn-cancel{padding:7px 14px;border-radius:var(--rs);font-size:11.5px;font-weight:700;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--txd);font-family:'Inter',sans-serif;transition:all .2s;}
+.btn-cancel:hover{color:var(--tx);}
+.btn-save{padding:7px 14px;border-radius:var(--rs);font-size:11.5px;font-weight:700;cursor:pointer;border:none;background:var(--ac);color:#000;font-family:'Space Grotesk',sans-serif;transition:all .2s;}
+.btn-save:hover{filter:brightness(1.1);}
+
+/* Modal Keyword Editor Enhanced */
+.m-kw-preview{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;padding:8px;background:var(--sf3);border:1px solid var(--bd);border-radius:var(--rs);min-height:32px;}
+.m-kw-hint{font-size:9px;color:var(--txm);margin-top:3px;line-height:1.4;}
+
+/* ═══════════════════════════════════════════════════════════
+   PREMIUM REDESIGN — Amber Gold · Subtle Micro-Animations
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ── */
+@keyframes breathe{
+  0%,100%{box-shadow:0 0 14px rgba(232,168,50,0.18);}
+  50%{box-shadow:0 0 28px rgba(232,168,50,0.32),0 0 56px rgba(232,168,50,0.06);}
+}
+@keyframes shimmer{
+  0%{background-position:-200% 0;}
+  100%{background-position:200% 0;}
+}
+@keyframes fadeSlideUp{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes modalIn{
+  from{opacity:0;transform:scale(0.97) translateY(8px);}
+  to{opacity:1;transform:scale(1) translateY(0);}
+}
+@keyframes borderPulse{
+  0%,100%{border-color:rgba(232,168,50,0.12);}
+  50%{border-color:rgba(232,168,50,0.25);}
+}
+@keyframes dotPulse{
+  0%,100%{opacity:1;}
+  50%{opacity:0.35;}
+}
+@keyframes toastIn{
+  from{transform:translateY(16px) scale(.95);opacity:0;}
+  to{transform:translateY(0) scale(1);opacity:1;}
+}
+
+/* ── Global polish ── */
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
+button,.tog,.plat-it,.chip,.tab,.prov-btn,input,select,textarea,.kw,.edit-btn,.sl-box,.tog-row,.info-box,.drop-zone{transition:all .25s cubic-bezier(.4,0,.2,1);}
+
+/* ── Header — Frosted glass ── */
+header{background:rgba(18,16,13,0.88);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);border-bottom:1px solid rgba(232,168,50,0.06);padding:10px 18px;}
+
+/* ── Logo ── */
+.logo-ico{animation:breathe 4s ease-in-out infinite;border-radius:9px;}
+.logo-tx{background:linear-gradient(90deg,#f0ebe3 25%,var(--ac) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;}
+
+/* ── Provider active ── */
+.prov-btn[data-p=claude].on{background:linear-gradient(135deg,var(--ac),var(--ac2));color:var(--bg);}
+.prov-btn:hover:not(.on){color:var(--txd);background:rgba(232,168,50,0.03);}
+
+/* ── Sidebar — Frosted glass ── */
+.sidebar{background:rgba(18,16,13,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(232,168,50,0.05);}
+
+/* ── Tabs ── */
+.tab.on{text-shadow:0 0 14px rgba(232,168,50,0.18);}
+
+/* ── Section headers ── */
+.s-hd{letter-spacing:2px;}
+
+/* ── Surface cards ── */
+.sl-box,.tog-row,.info-box{background:rgba(26,23,20,0.6);border:1px solid rgba(232,168,50,0.05);box-shadow:inset 0 1px 0 rgba(255,255,255,0.015),0 1px 4px rgba(0,0,0,0.1);}
+.sl-box:hover,.tog-row:hover{border-color:rgba(232,168,50,0.1);}
+
+/* ── Slider ── */
+input[type=range]{background:rgba(232,168,50,0.1);}
+input[type=range]::-webkit-slider-thumb{background:linear-gradient(135deg,var(--ac),var(--ac2));box-shadow:0 0 8px rgba(232,168,50,0.35);}
+
+/* ── Toggle ── */
+.tog.on{background:linear-gradient(135deg,var(--ac),var(--ac2));}
+
+/* ── Input focus glow ── */
+.api-inp:focus,.t-inp:focus,select:focus,.m-txt:focus{border-color:rgba(232,168,50,0.45);box-shadow:0 0 0 3px rgba(232,168,50,0.06);}
+
+/* ── Platform grid ── */
+.plat-it.on{box-shadow:0 0 12px rgba(232,168,50,0.05);}
+.plat-it:hover:not(.on){border-color:rgba(232,168,50,0.1);}
+
+/* ── Generate button — Premium ── */
+.btn-gen{background:linear-gradient(135deg,var(--ac),var(--ac2));box-shadow:0 2px 10px rgba(232,168,50,0.16);letter-spacing:.5px;}
+.btn-gen:hover:not(:disabled){box-shadow:0 4px 20px rgba(232,168,50,0.28),0 0 40px rgba(232,168,50,0.07);transform:translateY(-2px);}
+.btn-gen:active:not(:disabled){transform:translateY(0);box-shadow:0 1px 6px rgba(232,168,50,0.18);}
+
+/* ── Drop zone ── */
+.drop-zone{border:1.5px dashed rgba(232,168,50,0.15);background:rgba(18,16,13,0.4);animation:borderPulse 3.5s ease-in-out infinite;}
+.drop-zone:hover,.drop-zone.over{border-color:rgba(232,168,50,0.45);background:rgba(232,168,50,0.03);box-shadow:inset 0 0 30px rgba(232,168,50,0.02);animation:none;}
+.drop-ico{background:rgba(232,168,50,0.06);}
+
+/* ── Progress shimmer ── */
+.prog-fill{background:linear-gradient(90deg,var(--ac2),var(--ac),#ffd26a,var(--ac),var(--ac2));background-size:300% 100%;animation:shimmer 2s linear infinite;}
+
+/* ── Results ── */
+.res-wrap{border:1px solid rgba(232,168,50,0.05);background:rgba(18,16,13,0.5);}
+thead th{background:rgba(26,23,20,0.95);border-bottom:1px solid rgba(232,168,50,0.06);}
+tbody tr{animation:fadeSlideUp .3s ease forwards;border-bottom:1px solid rgba(232,168,50,0.03);}
+tbody tr:hover{background:rgba(232,168,50,0.025);}
+
+/* ── Notification ── */
+.notif{background:rgba(18,16,13,0.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(232,168,50,0.1);box-shadow:0 8px 32px rgba(0,0,0,0.35);animation:toastIn .35s cubic-bezier(.34,1.4,.64,1);}
+
+/* ── Modal ── */
+.modal-bg{background:rgba(5,4,3,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.modal{background:rgba(18,16,13,0.97);border:1px solid rgba(232,168,50,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.45),0 0 1px rgba(232,168,50,0.12);animation:modalIn .3s cubic-bezier(.34,1.3,.64,1) forwards;border-radius:14px;}
+.btn-save{background:linear-gradient(135deg,var(--ac),var(--ac2));color:var(--bg);}
+.btn-save:hover{filter:brightness(1.08);box-shadow:0 2px 12px rgba(232,168,50,0.22);}
+
+/* ── Match button ── */
+.btn-match{border-color:rgba(232,168,50,0.35);background:rgba(232,168,50,0.06);}
+.btn-match:hover{background:var(--ac);color:var(--bg);box-shadow:0 2px 12px rgba(232,168,50,0.18);}
+
+/* ── Scrollbar ── */
+.panel::-webkit-scrollbar-thumb,.res-scroll::-webkit-scrollbar-thumb,.modal-body::-webkit-scrollbar-thumb{background:rgba(232,168,50,0.12);}
+.panel::-webkit-scrollbar-thumb:hover,.res-scroll::-webkit-scrollbar-thumb:hover,.modal-body::-webkit-scrollbar-thumb:hover{background:rgba(232,168,50,0.22);}
+
+/* ── Chip dot ── */
+.cdot.run{animation:dotPulse 1s infinite;}
+
+/* ── Keyword legend ── */
+.kw-legend{background:rgba(26,23,20,0.45);border:1px solid rgba(232,168,50,0.04);}
+
+/* ═══════════════════════════════════════════════════════════
+   COST TRACKER
+   ═══════════════════════════════════════════════════════════ */
+.td-cost{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ac);white-space:nowrap;}
+.td-cost .cost-tokens{font-size:8.5px;color:var(--txm);display:block;margin-top:2px;}
+
+.cost-bar{padding:8px 13px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:5px;flex-shrink:0;background:rgba(18,16,13,0.5);}
+.cost-bar .cb-title{font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--txm);}
+.cost-bar .cb-row{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;}
+.cost-bar .cb-row span:first-child{color:var(--txd);}
+.cost-bar .cb-row span:last-child{font-family:'JetBrains Mono',monospace;color:var(--ac);font-weight:600;}
+.cost-bar .cb-row.total span:last-child{color:var(--ac2);font-size:13px;font-weight:700;}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHTBOX PREVIEW
+   ═══════════════════════════════════════════════════════════ */
+.lightbox-bg{position:fixed;inset:0;background:rgba(5,4,3,0.88);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:fadeIn .2s ease;cursor:zoom-out;}
+.lightbox-bg img{max-width:90vw;max-height:85vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.6);animation:modalIn .3s cubic-bezier(.34,1.3,.64,1) forwards;}
+.lightbox-info{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(18,16,13,0.95);border:1px solid rgba(232,168,50,0.1);border-radius:8px;padding:6px 14px;font-size:11px;color:var(--txd);backdrop-filter:blur(12px);z-index:401;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ═══════════════════════════════════════════════════════════
+   COPY BUTTONS
+   ═══════════════════════════════════════════════════════════ */
+.copy-btn{background:none;border:none;cursor:pointer;font-size:10px;color:var(--txm);padding:1px 3px;border-radius:3px;transition:all .15s;opacity:0;position:relative;}
+td:hover .copy-btn,.td-title:hover .copy-btn{opacity:1;}
+.copy-btn:hover{color:var(--ac);background:rgba(232,168,50,0.08);}
+.copy-btn.copied{color:var(--ok);}
+.copy-btn.copied::after{content:'✓';position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--ok);animation:fadeSlideUp .4s ease forwards;}
+
+/* ═══════════════════════════════════════════════════════════
+   PROGRESS DETAIL
+   ═══════════════════════════════════════════════════════════ */
+.prog-detail{margin:0 14px 4px;font-size:9.5px;color:var(--txm);display:none;font-family:'JetBrains Mono',monospace;}
+.prog-detail .pd-file{color:var(--txd);}
+.prog-detail .pd-eta{float:right;color:var(--ac);}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT VALIDATION
+   ═══════════════════════════════════════════════════════════ */
+.valid-warn{padding:8px 12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:var(--rs);margin:6px 14px;font-size:10.5px;color:var(--wa);display:none;}
+.valid-warn .vw-count{font-family:'JetBrains Mono',monospace;font-weight:700;}
+.valid-warn .vw-dismiss{float:right;cursor:pointer;color:var(--txm);font-size:12px;}
+.valid-warn .vw-dismiss:hover{color:var(--tx);}
+
+/* ── Clickable thumbnail ── */
+.td-thumb{cursor:zoom-in;transition:transform .15s,box-shadow .15s;}
+.td-thumb:hover{transform:scale(1.15);box-shadow:0 2px 12px rgba(0,0,0,0.4);}
+
+</style>
+</head>
+<body>
+<input type="file" id="fileIn" multiple accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
+
+<header>
+  <div class="logo">
+    <div class="logo-ico">M</div>
+    <div><div class="logo-tx">MetaGen</div><div class="logo-sub">Stock Metadata AI</div></div>
+  </div>
+
+  <div class="prov-grp">
+    <button class="prov-btn on" data-p="claude" onclick="setProvider('claude',this)">● Claude</button>
+    <button class="prov-btn" data-p="openai" onclick="setProvider('openai',this)">● OpenAI</button>
+    <button class="prov-btn" data-p="gemini" onclick="setProvider('gemini',this)">● Gemini</button>
+  </div>
+
+  <div class="api-row">
+    <span class="api-lbl">API Key</span>
+    <div class="api-wrap">
+      <input type="password" id="apiKey" class="api-inp" placeholder="sk-ant-api03-..." maxlength="200">
+      <span class="api-eye" onclick="toggleVis()" title="Show/hide">👁</span>
+    </div>
+    <div class="api-dot" id="apiDot"></div>
+    <button class="btn-sm" onclick="testApi()">Test →</button>
+  </div>
+</header>
+
+<div class="main">
+<div class="sidebar">
+  <div class="tabs">
+    <div class="tab on" onclick="switchTab('gen',this)">Generate</div>
+    <div class="tab" onclick="switchTab('plat',this)">Platforms</div>
+  </div>
+
+  <!-- GENERATE PANEL -->
+  <div class="panel" id="pGen">
+    <div class="s-blk">
+      <div class="s-hd">🤖 AI Model</div>
+      <select id="modelSel"></select>
+    </div>
+
+    <div class="s-blk">
+      <div class="s-hd">📝 Title Length (Characters)</div>
+      <div class="s-desc">Set min/max character count for titles</div>
+      <div class="sl-box">
+        <div class="sl-top"><span class="sl-lbl">Min Characters</span><span class="sl-val" id="vMinTC">50</span></div>
+        <input type="range" id="rMinTC" min="10" max="200" value="50" oninput="svc('rMinTC','vMinTC','ch')">
+      </div>
+      <div class="sl-box">
+        <div class="sl-top"><span class="sl-lbl">Max Characters</span><span class="sl-val" id="vMaxTC">150</span></div>
+        <input type="range" id="rMaxTC" min="30" max="500" value="150" oninput="svc('rMaxTC','vMaxTC','ch')">
+      </div>
+    </div>
+
+    <div class="s-blk">
+      <div class="s-hd">🏷️ Keywords</div>
+      <div class="s-desc">Count, type, and ranking configuration</div>
+      <div class="sl-box">
+        <div class="sl-top"><span class="sl-lbl">Min Keywords</span><span class="sl-val" id="vMinK">20</span></div>
+        <input type="range" id="rMinK" min="5" max="45" value="20" oninput="svc('rMinK','vMinK','')">
+      </div>
+      <div class="sl-box">
+        <div class="sl-top"><span class="sl-lbl">Max Keywords</span><span class="sl-val" id="vMaxK">45</span></div>
+        <input type="range" id="rMaxK" min="10" max="50" value="45" oninput="svc('rMaxK','vMaxK','')">
+      </div>
+      <div class="tog-row">
+        <div class="tog-inf"><span class="tog-nm">Single-Word</span><span class="tog-ds">e.g. "sunset", "mountain"</span></div>
+        <div class="tog on" id="tg-single" onclick="togSw('single')"></div>
+      </div>
+      <div class="tog-row">
+        <div class="tog-inf"><span class="tog-nm">Double-Word Phrases</span><span class="tog-ds">e.g. "golden sunset"</span></div>
+        <div class="tog on" id="tg-double" onclick="togSw('double')"></div>
+      </div>
+      <div class="tog-row">
+        <div class="tog-inf"><span class="tog-nm">Multi-Word Phrases</span><span class="tog-ds">e.g. "misty mountain valley"</span></div>
+        <div class="tog" id="tg-multi" onclick="togSw('multi')"></div>
+      </div>
+    </div>
+
+    <div class="s-blk">
+      <div class="s-hd">🎯 Keyword Rank Legend</div>
+      <div class="s-desc">imsStudio-standard ranking colors</div>
+      <div class="kw-legend">
+        <div class="kw-legend-item"><div class="kw-legend-dot" style="background:var(--kw-violet);box-shadow:0 0 4px var(--kw-violet);"></div>Excellent</div>
+        <div class="kw-legend-item"><div class="kw-legend-dot" style="background:var(--kw-blue);box-shadow:0 0 4px var(--kw-blue);"></div>Good</div>
+        <div class="kw-legend-item"><div class="kw-legend-dot" style="background:var(--kw-green);box-shadow:0 0 4px var(--kw-green);"></div>Normal</div>
+        <div class="kw-legend-item"><div class="kw-legend-dot" style="background:var(--kw-yellow);"></div>Mediocre</div>
+        <div class="kw-legend-item"><div class="kw-legend-dot" style="background:var(--kw-gray);"></div>Bad</div>
+        <div class="kw-legend-item"><div class="kw-legend-dot" style="background:var(--kw-white);"></div>Unknown</div>
+      </div>
+    </div>
+
+    <div class="s-blk">
+      <div class="s-hd">📄 Description (Characters)</div>
+      <div class="s-desc">Min/max character count for descriptions</div>
+      <div class="sl-box">
+        <div class="sl-top"><span class="sl-lbl">Min Characters</span><span class="sl-val" id="vMinDC">150</span></div>
+        <input type="range" id="rMinDC" min="50" max="500" value="150" oninput="svc('rMinDC','vMinDC','ch')">
+      </div>
+      <div class="sl-box">
+        <div class="sl-top"><span class="sl-lbl">Max Characters</span><span class="sl-val" id="vMaxDC">500</span></div>
+        <input type="range" id="rMaxDC" min="100" max="2000" value="500" oninput="svc('rMaxDC','vMaxDC','ch')">
+      </div>
+    </div>
+
+    <div class="s-blk">
+      <div class="s-hd">🌐 Output Language</div>
+      <select id="outLang">
+        <option value="English">English</option>
+        <option value="Thai">Thai (ภาษาไทย)</option>
+        <option value="Japanese">Japanese (日本語)</option>
+        <option value="German">German (Deutsch)</option>
+        <option value="French">French (Français)</option>
+        <option value="Spanish">Spanish (Español)</option>
+        <option value="Portuguese">Portuguese (Português)</option>
+        <option value="Italian">Italian (Italiano)</option>
+        <option value="Korean">Korean (한국어)</option>
+        <option value="Chinese Simplified">Chinese Simplified (简体中文)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- PLATFORMS PANEL -->
+  <div class="panel" id="pPlat" style="display:none">
+    <div class="s-blk">
+      <div class="s-hd">🎯 Active Platforms</div>
+      <div class="s-desc">Toggle which platforms to target</div>
+      <div class="plat-grid" id="platGrid"></div>
+    </div>
+
+    <div class="s-blk">
+      <div class="s-hd">📤 Export Format</div>
+      <div class="s-desc">Choose CSV structure for download</div>
+      <select id="expFmt" onchange="renderPlatInfo()"></select>
+    </div>
+
+    <div class="s-blk" id="platInfoWrap">
+      <div class="s-hd">ℹ️ Platform Specs</div>
+      <div class="info-box" id="platInfo"></div>
+      <button class="btn-match" onclick="matchPlatSettings()">↳ Match sliders to this platform's limits</button>
+    </div>
+
+    <div class="s-blk" id="freepikBlk" style="display:none">
+      <div class="s-hd">👑 Freepik Settings</div>
+      <div class="tog-row">
+        <div class="tog-inf"><span class="tog-nm">AI Generated</span><span class="tog-ds">Mark as AI-generated</span></div>
+        <div class="tog on" id="tg-aiGen" onclick="togSw('aiGen')"></div>
+      </div>
+      <div><div class="inp-lbl">AI Model Used</div>
+        <select id="aiModel">
+          <option>Adobe Firefly</option><option>Midjourney</option><option>DALL-E 3</option>
+          <option>Stable Diffusion</option><option>Leonardo AI</option><option>Ideogram</option>
+          <option>Flux</option><option>Kling AI</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="cost-bar" id="costBar" style="display:none;">
+    <div class="cb-title">💰 Session Cost</div>
+    <div class="cb-row"><span>Images processed</span><span id="cbCount">0</span></div>
+    <div class="cb-row"><span>Avg cost / image</span><span id="cbAvg">$0.0000</span></div>
+    <div class="cb-row"><span>Input tokens</span><span id="cbInTok">0</span></div>
+    <div class="cb-row"><span>Output tokens</span><span id="cbOutTok">0</span></div>
+    <div class="cb-row total"><span>Total cost</span><span id="cbTotal">$0.0000</span></div>
+  </div>
+  <div class="s-foot">
+    <button class="btn-gen" id="btnGen" onclick="generateAll()">✦ Generate</button>
+    <button class="btn-sm" id="btnRegen" onclick="generateAll(true)" title="Re-generate all images from scratch" style="display:none;">⟳ All</button>
+    <button class="btn-gen" id="btnCancel" onclick="cancelGen()" style="display:none;background:var(--er);color:#fff;">✕ Cancel</button>
+    <button class="btn-csv" id="btnCSV" onclick="exportCSV()" disabled>↓ CSV</button>
+    <button class="btn-csv" id="btnCSVAll" onclick="exportAllCSV()" disabled title="Export CSV for all active platforms">↓ All</button>
+  </div>
+</div>
+
+<!-- CONTENT AREA -->
+<div class="content">
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileIn').click()"
+       ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+    <div class="drop-ico">
+      <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+    </div>
+    <div class="drop-title">Upload Media</div>
+    <div class="drop-sub">Drag & drop or click · Supports JPG, PNG, WEBP, GIF · Up to 1,000 files</div>
+    <div class="fmt-row">
+      <span class="fmt">JPG</span><span class="fmt">PNG</span><span class="fmt">WEBP</span><span class="fmt">GIF</span>
+    </div>
+  </div>
+  <div class="prog-wrap" id="progWrap"><div class="prog-fill" id="progFill"></div></div>
+  <div class="prog-detail" id="progDetail"><span class="pd-file" id="pdFile"></span><span class="pd-eta" id="pdEta"></span></div>
+  <div class="valid-warn" id="validWarn"><span class="vw-dismiss" onclick="this.parentElement.style.display='none'">✕</span><span class="vw-count" id="vwCount"></span> <span id="vwMsg"></span></div>
+  <div class="chip-bar" id="chipBar"></div>
+  <div class="res-wrap">
+    <div class="res-hd">
+      <span class="res-title">Results</span>
+      <span class="res-ct" id="resCt">0 items</span>
+    </div>
+    <div class="res-scroll" id="resScroll">
+      <div class="empty" id="emptyState">
+        <div class="empty-ico">◈</div>
+        <div>Upload images and click <strong>Generate</strong></div>
+        <div style="font-size:9.5px;margin-top:2px;color:var(--txm);">Files processed locally · No data stored on any server</div>
+      </div>
+      <table id="resTable" style="display:none">
+        <thead><tr>
+          <th style="width:110px">File</th>
+          <th style="width:185px">Title</th>
+          <th>Description</th>
+          <th style="width:250px">Keywords</th>
+          <th style="width:70px">Cost</th>
+          <th style="width:55px"></th>
+        </tr></thead>
+        <tbody id="resTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="editModal" style="display:none" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-ttl">✏️ Edit Metadata</span>
+      <span class="modal-x" onclick="closeModal()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="m-lbl">Title</div>
+        <textarea id="mTitle" class="m-txt" rows="2" oninput="updCharCount('mTitle','mTitleCt')"></textarea>
+        <div class="m-char" id="mTitleCt">0 chars</div>
+      </div>
+      <div>
+        <div class="m-lbl">Description</div>
+        <textarea id="mDesc" class="m-txt" rows="4" oninput="updCharCount('mDesc','mDescCt')"></textarea>
+        <div class="m-char" id="mDescCt">0 chars</div>
+      </div>
+      <div>
+        <div class="m-lbl">Keywords (comma-separated · ordered by rank)</div>
+        <textarea id="mKw" class="m-txt" rows="4" oninput="updKwCount();renderModalKwPreview()"></textarea>
+        <div class="m-char" id="mKwCt">0 keywords</div>
+        <div class="m-kw-hint">💡 Keywords are ranked by SEO potential. First keywords = highest rank (violet/blue). Re-order by dragging or editing the text above.</div>
+        <div class="m-kw-preview" id="mKwPreview"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX MODAL -->
+<div class="lightbox-bg" id="lightbox" style="display:none" onclick="closeLightbox()">
+  <img id="lbImg" src="" alt="Preview">
+  <div class="lightbox-info" id="lbInfo"></div>
+</div>
+
+<script>
+/* ============================
+   PROVIDERS CONFIG
+   ============================ */
+const PROVIDERS = {
+  claude: {
+    name:'Claude (Anthropic)',
+    keyHint:'sk-ant-api03-...',
+    models:[
+      {v:'claude-sonnet-4-20250514',l:'Sonnet 4 · Recommended'},
+      {v:'claude-haiku-4-5-20251001',l:'Haiku 4.5 · Fast & Cheap'},
+      {v:'claude-opus-4-5',l:'Opus 4.5 · Best Quality (Expensive)'},
+    ]
+  },
+  openai: {
+    name:'OpenAI (GPT)',
+    keyHint:'sk-proj-...',
+    models:[
+      {v:'gpt-4.1',l:'GPT-4.1 · Recommended'},
+      {v:'gpt-4.1-mini',l:'GPT-4.1 Mini · Fast & Cheap'},
+      {v:'gpt-4o',l:'GPT-4o · Stable'},
+      {v:'gpt-4.1-nano',l:'GPT-4.1 Nano · Cheapest'},
+    ]
+  },
+  gemini: {
+    name:'Google Gemini',
+    keyHint:'AIzaSy...',
+    models:[
+      {v:'gemini-2.5-flash',l:'Gemini 2.5 Flash · Recommended'},
+      {v:'gemini-2.5-pro',l:'Gemini 2.5 Pro · Best Quality'},
+      {v:'gemini-2.0-flash',l:'Gemini 2.0 Flash · Stable'},
+    ]
+  }
+};
+let curProv = 'claude';
+
+/* ============================
+   MODEL PRICING (USD per 1M tokens)
+   Updated: Jun 2026 — edit here if prices change
+   ============================ */
+const MODEL_PRICING = {
+  // Claude (Anthropic)
+  'claude-sonnet-4-20250514':  {input: 3.00,  output: 15.00},
+  'claude-haiku-4-5-20251001': {input: 0.80,  output: 4.00},
+  'claude-opus-4-5':           {input: 15.00, output: 75.00},
+  // OpenAI
+  'gpt-4.1':       {input: 2.00, output: 8.00},
+  'gpt-4.1-mini':  {input: 0.40, output: 1.60},
+  'gpt-4o':        {input: 2.50, output: 10.00},
+  'gpt-4.1-nano':  {input: 0.10, output: 0.40},
+  // Gemini
+  'gemini-2.5-flash': {input: 0.15, output: 0.60},
+  'gemini-2.5-pro':   {input: 1.25, output: 10.00},
+  'gemini-2.0-flash': {input: 0.10, output: 0.40},
+};
+
+function calcCost(model, inputTokens, outputTokens) {
+  const p = MODEL_PRICING[model];
+  if(!p) return {cost: 0, inputCost: 0, outputCost: 0};
+  const inputCost = (inputTokens / 1_000_000) * p.input;
+  const outputCost = (outputTokens / 1_000_000) * p.output;
+  return {cost: inputCost + outputCost, inputCost, outputCost};
+}
+
+/* ============================
+   KEYWORD RANK SYSTEM
+   imsStudio Standard
+   ============================ */
+// Rank order: violet(5) > blue(4) > green(3) > yellow(2) > gray(1) > white(0)
+const RANK_ORDER = ['white','gray','yellow','green','blue','violet'];
+const RANK_LABELS = {
+  violet:'Excellent', blue:'Good', green:'Normal',
+  yellow:'Mediocre', gray:'Bad', white:'Unknown'
+};
+
+/**
+ * Assign imsStudio-style ranks to keywords based on their position.
+ * The AI returns keywords pre-sorted by SEO relevance (best first).
+ * We map the position to rank tiers for visual feedback.
+ */
+function assignKeywordRanks(keywords) {
+  if(!keywords||!keywords.length) return [];
+  const total = keywords.length;
+  return keywords.map((kw, i) => {
+    const pos = i / total; // 0 = first (best), 1 = last
+    let rank;
+    if(pos < 0.10) rank = 'violet';      // Top 10% — Excellent
+    else if(pos < 0.25) rank = 'blue';    // Top 10-25% — Good
+    else if(pos < 0.50) rank = 'green';   // Top 25-50% — Normal
+    else if(pos < 0.75) rank = 'yellow';  // Top 50-75% — Mediocre
+    else if(pos < 0.90) rank = 'gray';    // Top 75-90% — Bad
+    else rank = 'white';                  // Bottom 10% — Unknown/filler
+
+    // Handle string keywords (backward compat) or object keywords
+    const word = typeof kw === 'string' ? kw : kw.keyword;
+    return { keyword: word, rank };
+  });
+}
+
+/**
+ * Build keyword HTML with imsStudio rank badges
+ */
+function buildKeywordHTML(rankedKws, maxShow = 8) {
+  if(!rankedKws || !rankedKws.length) return '<span style="color:var(--txm);font-size:9px;">No keywords</span>';
+  const shown = rankedKws.slice(0, maxShow);
+  let html = shown.map(k =>
+    `<span class="kw rank-${k.rank}" title="${RANK_LABELS[k.rank]} rank"><span class="kw-dot"></span>${escHTML(k.keyword)}</span>`
+  ).join('');
+  if(rankedKws.length > maxShow) {
+    html += `<span class="kw-more" title="Click Edit to see all ${rankedKws.length} keywords">+${rankedKws.length - maxShow}</span>`;
+  }
+  return html;
+}
+
+/**
+ * Build keyword stats bar showing rank distribution
+ */
+function buildKeywordStatsBar(rankedKws) {
+  if(!rankedKws || !rankedKws.length) return '';
+  const counts = {violet:0, blue:0, green:0, yellow:0, gray:0, white:0};
+  rankedKws.forEach(k => counts[k.rank]++);
+  const total = rankedKws.length;
+  const colors = {
+    violet:'var(--kw-violet)', blue:'var(--kw-blue)', green:'var(--kw-green)',
+    yellow:'var(--kw-yellow)', gray:'var(--kw-gray)', white:'var(--kw-white)'
+  };
+  let segs = '';
+  RANK_ORDER.slice().reverse().forEach(r => {
+    if(counts[r] > 0) {
+      const pct = (counts[r] / total * 100);
+      segs += `<div class="kw-stat-seg" style="width:${pct}%;background:${colors[r]};"></div>`;
+    }
+  });
+  return `<div class="kw-stats"><div class="kw-stat-bar">${segs}</div><span class="kw-stat-ct">${total}kw</span></div>`;
+}
+
+/* ============================
+   PLATFORM SPECS (Research-verified)
+   ============================ */
+// lc = limit chars, lk = limit keywords
+const lc=(s,n)=>!s?'':s.length>n?s.substring(0,n-1)+'…':s;
+const lk=(a,n)=>a.slice(0,n);
+const esc=s=>`"${(s||'').replace(/"/g,'""')}"`;
+const row=cols=>cols.map(esc).join(',')+'\n';
+
+const PLAT_SPECS = {
+  Adobe:{
+    name:'Adobe Stock',titleMax:200,titleRec:70,descCol:false,
+    kwMin:5,kwMax:50,kwSep:',',
+    note:'Title ≤200 chars (≤70 recommended). NO description column. First 10 keywords prioritized in search.',
+    warn:'⚠️ Max 50 keywords. Comma-separated. Add Category number for better visibility.',
+    headers:'Filename,Title,Keywords,Category,Releases',
+    buildRow:(r)=>row([r.file.name, lc(r.title,200), lk(r.keywords,50).join(','), '', ''])
+  },
+  Shutterstock:{
+    name:'Shutterstock',titleMax:200,titleRec:120,descCol:false,
+    kwMin:7,kwMax:50,kwSep:',',
+    note:'"Description" column = your title/caption. No separate description. Min 7 keywords.',
+    warn:'⚠️ Min 5 words in description. Max 2048 chars (sweet spot 60–200). Min 7 keywords.',
+    headers:'Filename,Description,Keywords,Categories',
+    buildRow:(r)=>row([r.file.name, lc(r.title,200), lk(r.keywords,50).join(','), ''])
+  },
+  Freepik:{
+    name:'Freepik',titleMax:200,titleRec:null,descCol:false,
+    kwMin:10,kwMax:50,kwSep:',',
+    note:'Minimum 10 tags required. Max 50. AI-generated flag & tool supported.',
+    warn:'⚠️ Min 10 tags — fewer will be rejected.',
+    headers:'filename,title,tags,is_ai_generated,ai_tool',
+    buildRow:(r,cfg)=>row([r.file.name, lc(r.title,200), lk(r.keywords,50).join(','), cfg.aiGen?'1':'0', cfg.aiGen?cfg.aiModel:''])
+  },
+  iStock:{
+    name:'iStock / ESP',titleMax:200,titleRec:null,descCol:true,descMax:2000,
+    kwMin:5,kwMax:50,kwSep:',',
+    note:'Separate title and description. Description up to 2000 chars. Max 50 keywords.',
+    warn:null,
+    headers:'File Name,Title,Description,Keywords',
+    buildRow:(r)=>row([r.file.name, lc(r.title,200), lc(r.description,2000), lk(r.keywords,50).join(',')])
+  },
+  Getty:{
+    name:'Getty Images',titleMax:500,titleRec:200,descCol:true,descMax:2000,
+    kwMin:5,kwMax:50,kwSep:',',
+    note:'Caption up to 500 chars (rec ≤200). Full description supported. Max 50 keywords.',
+    warn:null,
+    headers:'File Name,Caption,Description,Keywords',
+    buildRow:(r)=>row([r.file.name, lc(r.title,500), lc(r.description,2000), lk(r.keywords,50).join(',')])
+  },
+  Dreamstime:{
+    name:'Dreamstime',titleMax:200,titleRec:null,descCol:true,descMax:1000,descMin:50,
+    kwMin:5,kwMax:50,kwSep:',',
+    note:'Title 2–200 chars. Description min 50 chars, max 1000. Max 50 keywords.',
+    warn:'⚠️ Description minimum 50 characters required.',
+    headers:'file,title,description,keywords',
+    buildRow:(r)=>row([r.file.name, lc(r.title,200), lc(r.description,1000), lk(r.keywords,50).join(',')])
+  },
+  '123RF':{
+    name:'123RF',titleMax:255,titleRec:null,descCol:true,descMax:500,
+    kwMin:1,kwMax:50,kwSep:',',
+    note:'Title up to 255 chars. Description optional. Max 50 keywords.',
+    warn:null,
+    headers:'Filename,Title,Description,Keywords',
+    buildRow:(r)=>row([r.file.name, lc(r.title,255), lc(r.description,500), lk(r.keywords,50).join(',')])
+  },
+  Pond5:{
+    name:'Pond5',titleMax:100,titleRec:80,descCol:true,descMax:255,
+    kwMin:5,kwMax:50,kwSep:',',
+    note:'Title max 100 chars (rec ≤80). Description max 255. Max 50 keywords.',
+    warn:'⚠️ Pond5 is strict on title length — keep it short and punchy.',
+    headers:'file_name,title,description,keywords',
+    buildRow:(r)=>row([r.file.name, lc(r.title,100), lc(r.description,255), lk(r.keywords,50).join(',')])
+  },
+  Depositphotos:{
+    name:'Depositphotos',titleMax:250,titleRec:null,descCol:true,descMax:500,
+    kwMin:1,kwMax:70,kwSep:',',
+    note:'Title max 250 chars. Most generous: up to 70 keywords. Desc up to 500 chars.',
+    warn:null,
+    headers:'file,title,description,keywords',
+    buildRow:(r)=>row([r.file.name, lc(r.title,250), lc(r.description,500), lk(r.keywords,70).join(',')])
+  },
+  Alamy:{
+    name:'Alamy',titleMax:500,titleRec:200,descCol:false,
+    kwMin:1,kwMax:100,kwSep:' ',
+    note:'Caption up to 500 chars (rec ≤200). Keywords are SPACE-separated. Very liberal limits.',
+    warn:'⚠️ Keywords must be SPACE-separated (not commas) per Alamy format.',
+    headers:'Filename,Caption,Tags',
+    buildRow:(r)=>row([r.file.name, lc(r.title,500), lk(r.keywords,100).join(' ')])
+  },
+  Vecteezy:{
+    name:'Vecteezy',titleMax:100,titleRec:null,descCol:true,descMax:500,
+    kwMin:5,kwMax:25,kwSep:',',
+    note:'Title max 100 chars. Tags: strictly 5–25 (fewer or more will be rejected).',
+    warn:'⚠️ Strict 5–25 tag limit. Fewer than 5 or more than 25 tags are rejected.',
+    headers:'filename,title,description,tags',
+    buildRow:(r)=>row([r.file.name, lc(r.title,100), lc(r.description,500), lk(r.keywords,25).join(',')])
+  },
+  Canva:{
+    name:'Canva Creator',titleMax:150,titleRec:null,descCol:true,descMax:500,
+    kwMin:1,kwMax:30,kwSep:',',
+    note:'Canva Creator portal format. Title max 150 chars. Max 30 tags.',
+    warn:null,
+    headers:'filename,title,description,tags',
+    buildRow:(r)=>row([r.file.name, lc(r.title,150), lc(r.description,500), lk(r.keywords,30).join(',')])
+  },
+  Motionarray:{
+    name:'Motion Array',titleMax:100,titleRec:null,descCol:true,descMax:500,
+    kwMin:1,kwMax:50,kwSep:',',
+    note:'Primarily for motion templates. Title max 100 chars. Max 50 tags.',
+    warn:null,
+    headers:'filename,title,description,tags',
+    buildRow:(r)=>row([r.file.name, lc(r.title,100), lc(r.description,500), lk(r.keywords,50).join(',')])
+  },
+  General:{
+    name:'General (Universal)',titleMax:200,titleRec:null,descCol:true,descMax:1000,
+    kwMin:1,kwMax:50,kwSep:',',
+    note:'Standard 4-column format. Compatible as a starting point for most platforms.',
+    warn:null,
+    headers:'Filename,Title,Description,Keywords',
+    buildRow:(r)=>row([r.file.name, lc(r.title,200), lc(r.description,1000), lk(r.keywords,50).join(',')])
+  }
+};
+
+/* ============================
+   PLATFORM UI DATA
+   ============================ */
+const PLATS = [
+  {id:'Adobe',     nm:'Adobe',      ic:'St', bg:'#e8231a'},
+  {id:'Shutterstock',nm:'Shutterstock',ic:'SS',bg:'#ee2222'},
+  {id:'Freepik',   nm:'Freepik',   ic:'FP', bg:'#1273eb'},
+  {id:'iStock',    nm:'iStock',    ic:'iS', bg:'#1e1e1e'},
+  {id:'Getty',     nm:'Getty',     ic:'G',  bg:'#1b1b1b'},
+  {id:'Dreamstime',nm:'Dreams...',  ic:'Dt', bg:'#007dc3'},
+  {id:'123RF',     nm:'123RF',     ic:'3F', bg:'#f5a623'},
+  {id:'Pond5',     nm:'Pond5',     ic:'P5', bg:'#00c4b4'},
+  {id:'Depositphotos',nm:'Deposit...',ic:'DP',bg:'#222'},
+  {id:'Alamy',     nm:'Alamy',     ic:'Al', bg:'#1b4d3e'},
+  {id:'Vecteezy',  nm:'Vecteezy', ic:'Vz', bg:'#ff6b35'},
+  {id:'Canva',     nm:'Canva',     ic:'Ca', bg:'#00c4cc'},
+  {id:'Motionarray',nm:'Motion...',ic:'Mo', bg:'#6c4fff'},
+  {id:'General',   nm:'General',   ic:'✦',  bg:'#00c47a'},
+];
+
+/* ============================
+   STATE
+   ============================ */
+let files=[], results=[], editIdx=-1, isGen=false;
+let togs={single:true,double:true,multi:false,aiGen:true};
+let activePlats=new Set(['Adobe','Shutterstock','Freepik','General']);
+let abortController=null;
+
+/* Session cost tracking */
+let sessionCost = 0;
+let sessionInTokens = 0;
+let sessionOutTokens = 0;
+let sessionCostCount = 0;
+let genStartTime = 0;
+
+/* ============================
+   SECURITY UTILS
+   ============================ */
+function escHTML(s){
+  if(!s)return '';
+  const d=document.createElement('div');
+  d.textContent=String(s);
+  return d.innerHTML;
+}
+
+
+function initPlats() {
+  const g=document.getElementById('platGrid');
+  PLATS.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='plat-it'+(activePlats.has(p.id)?' on':'');
+    d.id='pl-'+p.id;
+    d.onclick=()=>togPlat(p.id,d);
+    d.innerHTML=`<div class="plat-ic" style="background:${p.bg}22;color:${p.bg};">${p.ic}</div><div class="plat-nm">${p.nm}</div>`;
+    g.appendChild(d);
+  });
+}
+
+function togPlat(id,el){
+  activePlats.has(id)?activePlats.delete(id):activePlats.add(id);
+  el.classList.toggle('on',activePlats.has(id));
+  document.getElementById('freepikBlk').style.display=activePlats.has('Freepik')?'':'none';
+  renderExpFmt();
+}
+
+function renderExpFmt(){
+  const sel=document.getElementById('expFmt');
+  const cur=sel.value;
+  sel.innerHTML='';
+  // Active platforms first, then General always available
+  const list=[...activePlats,'General'].filter((v,i,a)=>a.indexOf(v)===i);
+  list.forEach(id=>{
+    if(PLAT_SPECS[id]){
+      const o=document.createElement('option');
+      o.value=id; o.textContent=PLAT_SPECS[id].name;
+      sel.appendChild(o);
+    }
+  });
+  if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+  renderPlatInfo();
+}
+
+function renderPlatInfo(){
+  const id=document.getElementById('expFmt').value;
+  const sp=PLAT_SPECS[id];
+  if(!sp){document.getElementById('platInfo').innerHTML='';return;}
+  const kwRange=sp.kwMin+(sp.kwMax?'–'+sp.kwMax:'+')+' keywords';
+  const descInfo=sp.descCol?`≤${sp.descMax} chars`:'Not included in CSV';
+  const titleInfo=`≤${sp.titleMax} chars${sp.titleRec?` (rec ≤${sp.titleRec})`:''}`; 
+  document.getElementById('platInfo').innerHTML=`
+    <div class="ib-title">${sp.name}</div>
+    <div class="ib-row"><span>Title</span><span>${titleInfo}</span></div>
+    <div class="ib-row"><span>Description</span><span>${descInfo}</span></div>
+    <div class="ib-row"><span>Keywords</span><span>${kwRange}</span></div>
+    <div class="ib-row"><span>Separator</span><span>${sp.kwSep===','?'Comma':'Space'}</span></div>
+    <div class="ib-row"><span>CSV Headers</span><span style="font-size:8.5px;">${sp.headers.split(',').join(', ')}</span></div>
+    ${sp.warn?`<div class="ib-note warn">${sp.warn}</div>`:`<div class="ib-note">${sp.note}</div>`}
+  `;
+}
+
+function matchPlatSettings(){
+  const id=document.getElementById('expFmt').value;
+  const sp=PLAT_SPECS[id];
+  if(!sp) return;
+  const tMax=sp.titleMax;
+  const tMin=Math.max(30,Math.round(tMax*0.35));
+  const dMax=sp.descCol?Math.min(sp.descMax,2000):500;
+  const dMin=Math.max(50,Math.round(dMax*0.3));
+  setSlider('rMinTC','vMinTC',Math.min(tMin,200),'ch');
+  setSlider('rMaxTC','vMaxTC',Math.min(tMax,500),'ch');
+  setSlider('rMinK','vMinK',sp.kwMin||5,'');
+  setSlider('rMaxK','vMaxK',Math.min(sp.kwMax||50,50),'');
+  setSlider('rMinDC','vMinDC',Math.min(dMin,500),'ch');
+  setSlider('rMaxDC','vMaxDC',Math.min(dMax,2000),'ch');
+  notif(`Sliders matched to ${sp.name} limits ✓`,'ok');
+}
+
+function setSlider(rid,vid,val,sfx){
+  const el=document.getElementById(rid);
+  el.value=val;
+  document.getElementById(vid).textContent=val+sfx;
+}
+
+/* ============================
+   TABS
+   ============================ */
+function switchTab(t,el){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pGen').style.display=t==='gen'?'':'none';
+  document.getElementById('pPlat').style.display=t==='plat'?'':'none';
+}
+
+/* ============================
+   PROVIDER
+   ============================ */
+function setProvider(p,el){
+  curProv=p;
+  document.querySelectorAll('.prov-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  const pv=PROVIDERS[p];
+  document.getElementById('apiKey').placeholder=pv.keyHint;
+  document.getElementById('apiDot').className='api-dot';
+  const sel=document.getElementById('modelSel');
+  sel.innerHTML=pv.models.map(m=>`<option value="${m.v}">${m.l}</option>`).join('');
+}
+
+function toggleVis(){
+  const i=document.getElementById('apiKey');
+  i.type=i.type==='password'?'text':'password';
+}
+
+async function testApi(){
+  const key=document.getElementById('apiKey').value.trim();
+  if(!key){notif('Enter your API key first','err');return;}
+  const dot=document.getElementById('apiDot');
+  dot.style.background='#fbbf24';
+  try{
+    let ok=false;
+    if(curProv==='claude'){
+      const r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:5,messages:[{role:'user',content:'hi'}]})
+      });
+      ok=r.ok;
+    } else if(curProv==='openai'){
+      const r=await fetch('https://api.openai.com/v1/models',{
+        headers:{'Authorization':'Bearer '+key}
+      });
+      ok=r.ok;
+    } else if(curProv==='gemini'){
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+      ok=r.ok;
+    }
+    if(ok){dot.className='api-dot ok';notif('API key connected ✓','ok');}
+    else throw new Error('Auth failed');
+  }catch(e){dot.className='api-dot err';notif('API key error: '+e.message,'err');}
+}
+
+/* ============================
+   SLIDERS / TOGGLES
+   ============================ */
+function svc(rid,vid,sfx){
+  document.getElementById(vid).textContent=document.getElementById(rid).value+sfx;
+}
+function togSw(id){
+  togs[id]=!togs[id];
+  document.getElementById('tg-'+id).classList.toggle('on',togs[id]);
+}
+
+/* ============================
+   FILES
+   ============================ */
+document.getElementById('fileIn').addEventListener('change',e=>addFiles(e.target.files));
+function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('over');}
+function onDragLeave(){document.getElementById('dropZone').classList.remove('over');}
+function onDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('over');addFiles(e.dataTransfer.files);}
+
+function addFiles(nf){
+  Array.from(nf).filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    files.push({file:f,id:crypto.randomUUID(),status:'pending',preview:null});
+  });
+  renderChips();
+  document.getElementById('fileIn').value='';
+}
+
+function renderChips(){
+  const bar=document.getElementById('chipBar');bar.innerHTML='';
+  files.forEach((f)=>{
+    const c=document.createElement('div');c.className='chip';c.id='chip-'+f.id;
+    const img=document.createElement('img');
+    const dot=document.createElement('div');dot.className='cdot '+f.status;dot.id='cdot-'+f.id;
+    const nm=document.createElement('span');
+    nm.style.cssText='max-width:75px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;';
+    nm.textContent=f.file.name;
+    const x=document.createElement('span');x.className='chip-x';x.textContent='✕';
+    const fid=f.id;
+    x.onclick=()=>{const idx=files.findIndex(z=>z.id===fid);if(idx>=0)files.splice(idx,1);renderChips();};
+    if(f.preview){img.src=f.preview;}else{
+      const reader=new FileReader();
+      reader.onload=e=>{img.src=e.target.result;f.preview=e.target.result;};
+      reader.readAsDataURL(f.file);
+    }
+    c.append(dot,img,nm,x);bar.appendChild(c);
+  });
+}
+function setDot(id,st){const el=document.getElementById('cdot-'+id);if(el)el.className='cdot '+st;}
+
+/* ============================
+   GENERATE
+   ============================ */
+async function generateAll(forceAll){
+  if(isGen)return;
+  const key=document.getElementById('apiKey').value.trim();
+  if(!key){notif('Enter your Claude/OpenAI/Gemini API key','err');return;}
+  if(!files.length){notif('Upload at least one image','err');return;}
+
+  // Smart Generate: only process files without existing results
+  const pending=forceAll?[...files]:files.filter(f=>!results.some(r=>r.id===f.id));
+  if(!pending.length){
+    notif('All images already generated ✓ Add new images or press ⟳ All','ok');
+    return;
+  }
+
+  isGen=true;
+  if(forceAll){results=[];document.getElementById('resTbody').innerHTML='';sessionCost=0;sessionInTokens=0;sessionOutTokens=0;sessionCostCount=0;}
+  abortController=new AbortController();
+  const btn=document.getElementById('btnGen');
+  const btnC=document.getElementById('btnCancel');
+  const btnR=document.getElementById('btnRegen');
+  btn.style.display='none';btnC.style.display='';btnR.style.display='none';
+  document.getElementById('progWrap').style.display='block';
+  document.getElementById('progFill').style.width='0%';
+  document.getElementById('progDetail').style.display='block';
+  if(forceAll||!results.length){
+    document.getElementById('resTable').style.display='none';
+    document.getElementById('emptyState').style.display='none';
+  }
+  document.getElementById('btnCSV').disabled=true;
+  document.getElementById('btnCSVAll').disabled=true;
+  document.getElementById('costBar').style.display='flex';
+  const cfg=getConfig();
+  let done=0;
+  genStartTime=Date.now();
+  for(const f of pending){
+    if(abortController.signal.aborted)break;
+    setDot(f.id,'run');
+    // Show progress detail
+    document.getElementById('pdFile').textContent=`Processing: ${f.file.name}`;
+    if(done>0){
+      const elapsed=(Date.now()-genStartTime)/1000;
+      const avgTime=elapsed/done;
+      const remaining=Math.round(avgTime*(pending.length-done));
+      document.getElementById('pdEta').textContent=`~${remaining}s remaining`;
+    } else {
+      document.getElementById('pdEta').textContent='Estimating...';
+    }
+    try{
+      const b64=await toB64(f.file);
+      const meta=await callAI(key,b64,f.file.type||'image/jpeg',cfg);
+      meta.rankedKeywords = assignKeywordRanks(meta.keywords);
+      // Track cost
+      if(meta._usage){
+        const costInfo=calcCost(meta._usage.model, meta._usage.inputTokens, meta._usage.outputTokens);
+        meta._cost=costInfo.cost;
+        meta._inputTokens=meta._usage.inputTokens;
+        meta._outputTokens=meta._usage.outputTokens;
+        sessionCost+=costInfo.cost;
+        sessionInTokens+=meta._usage.inputTokens;
+        sessionOutTokens+=meta._usage.outputTokens;
+        sessionCostCount++;
+        updateCostBar();
+      }
+      results.push({...f,...meta});
+      appendRow(results.length-1,f,meta,cfg.expFmt);
+      setDot(f.id,'ok');
+    }catch(e){
+      if(e.name==='AbortError'){setDot(f.id,'err');break;}
+      setDot(f.id,'err');
+      notif(`Error: ${f.file.name} — ${e.message}`,'err');
+    }
+    done++;
+    document.getElementById('progFill').style.width=(done/pending.length*100)+'%';
+    document.getElementById('resCt').textContent=`${results.length} items (${done}/${pending.length} new)`;
+    if(done<pending.length&&!abortController.signal.aborted)await new Promise(r=>setTimeout(r,300));
+  }
+  isGen=false;btn.style.display='';btnC.style.display='none';
+  document.getElementById('progDetail').style.display='none';
+  if(results.length){
+    document.getElementById('resTable').style.display='table';
+    document.getElementById('btnCSV').disabled=false;
+    document.getElementById('btnCSVAll').disabled=false;
+    document.getElementById('btnRegen').style.display='';
+    document.getElementById('resCt').textContent=`${results.length} items`;
+    const elapsed=((Date.now()-genStartTime)/1000).toFixed(1);
+    notif(`Done! ${done} new · ${results.length} total · ${elapsed}s · $${sessionCost.toFixed(4)}`,'ok');
+  } else {
+    document.getElementById('emptyState').style.display='flex';
+  }
+  setTimeout(()=>document.getElementById('progWrap').style.display='none',1200);
+  saveSettings();
+}
+
+function cancelGen(){
+  if(abortController)abortController.abort();
+  notif('Generation cancelled','err');
+}
+
+function getConfig(){
+  const kwTypes=[];
+  if(togs.single)kwTypes.push('single-word keywords');
+  if(togs.double)kwTypes.push('two-word phrases');
+  if(togs.multi)kwTypes.push('multi-word phrases (3+ words)');
+  const rawMinTC=+document.getElementById('rMinTC').value,rawMaxTC=+document.getElementById('rMaxTC').value;
+  const rawMinK=+document.getElementById('rMinK').value,rawMaxK=+document.getElementById('rMaxK').value;
+  const rawMinDC=+document.getElementById('rMinDC').value,rawMaxDC=+document.getElementById('rMaxDC').value;
+  return{
+    model:document.getElementById('modelSel').value,
+    minTC:Math.min(rawMinTC,rawMaxTC),
+    maxTC:Math.max(rawMinTC,rawMaxTC),
+    minK:Math.min(rawMinK,rawMaxK),
+    maxK:Math.max(rawMinK,rawMaxK),
+    minDC:Math.min(rawMinDC,rawMaxDC),
+    maxDC:Math.max(rawMinDC,rawMaxDC),
+    kwTypes:kwTypes.length?kwTypes.join(' and '):'single-word and two-word keywords',
+    platforms:[...activePlats].join(', '),
+    lang:document.getElementById('outLang').value,
+    expFmt:document.getElementById('expFmt').value,
+    aiGen:togs.aiGen,
+    aiModel:document.getElementById('aiModel').value,
+  };
+}
+
+function toB64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>res(e.target.result.split(',')[1]);
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function buildPrompt(c){
+  return `You are an expert stock photography SEO metadata specialist. Analyze this image and generate professional, highly-optimized stock media metadata.
+
+Target platforms: ${c.platforms}
+Output language: ${c.lang}
+
+Requirements:
+- Title: ${c.minTC}–${c.maxTC} characters. Compelling, descriptive, SEO-optimized and searchable. Use natural language, avoid keyword stuffing. Include the most important subject and context.
+- Description: ${c.minDC}–${c.maxDC} characters. SEO-optimized, natural flowing sentences (NOT a keyword list). Cover: scene composition, mood/atmosphere, subjects, colors, lighting, potential commercial use cases. Write as if describing for a buyer searching for this exact image.
+- Keywords: ${c.minK}–${c.maxK} items using ${c.kwTypes}.
+
+CRITICAL KEYWORD RANKING RULES (imsStudio Standard):
+You MUST sort keywords by SEO relevance/sales potential — most valuable FIRST.
+Use this priority ordering strategy:
+1. FIRST (Top priority): Core subject keywords that directly describe the main subject(s) — these are the highest-converting search terms
+2. SECOND: Scene/context keywords that describe the setting, environment, composition
+3. THIRD: Mood/emotion/style keywords that describe atmosphere, feeling, artistic style
+4. FOURTH: Color/lighting/technique keywords
+5. FIFTH: Conceptual/commercial use keywords (e.g. "business", "technology", "lifestyle")
+6. LAST (Lowest priority): Generic/broad category keywords with high competition
+
+Ensure no duplicate keywords. Each keyword should be unique and add distinct SEO value.
+Avoid overly generic terms like "photo", "image", "picture" unless specifically relevant.
+Include a mix of high-traffic broad terms AND specific long-tail terms for optimal discoverability.
+
+IMPORTANT: Return ONLY valid JSON. No markdown fences. No explanation. Just the JSON object:
+{"title":"...","description":"...","keywords":["keyword1","keyword2","keyword3"]}
+
+The keywords array MUST be ordered from highest SEO value to lowest. This order is critical.`;
+}
+
+/* Retry wrapper for API calls — handles 429 rate limits and 5xx server errors */
+async function callWithRetry(fn, maxRetries=2) {
+  for(let attempt=0; attempt<=maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch(e) {
+      if(e.name==='AbortError') throw e;
+      const isRetryable = e.message && (e.message.includes('429') || e.message.includes('rate') ||
+        e.message.includes('500') || e.message.includes('502') || e.message.includes('503'));
+      if(isRetryable && attempt < maxRetries) {
+        const delay = (attempt+1) * 2000; // 2s, 4s
+        notif(`Rate limited — retrying in ${delay/1000}s... (attempt ${attempt+2}/${maxRetries+1})`,'');
+        await new Promise(r=>setTimeout(r, delay));
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+async function callAI(key,b64,mime,cfg){
+  return callWithRetry(async () => {
+    if(curProv==='claude') return callClaude(key,b64,mime,cfg);
+    if(curProv==='openai') return callOpenAI(key,b64,mime,cfg);
+    if(curProv==='gemini') return callGemini(key,b64,mime,cfg);
+    throw new Error('Unsupported provider: '+curProv);
+  });
+}
+
+async function callClaude(key,b64,mime,cfg){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    signal:abortController?.signal,method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({
+      model:cfg.model, max_tokens:1500,
+      messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+        {type:'text',text:buildPrompt(cfg)}
+      ]}]
+    })
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Claude error '+r.status);}
+  const d=await r.json();
+  const meta = parseJ(d.content.map(x=>x.text||'').join(''));
+  // Extract usage from Claude response
+  const usage = d.usage || {};
+  meta._usage = {
+    inputTokens: usage.input_tokens || 0,
+    outputTokens: usage.output_tokens || 0,
+    model: cfg.model
+  };
+  return meta;
+}
+
+async function callOpenAI(key,b64,mime,cfg){
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    signal:abortController?.signal,method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({
+      model:cfg.model, max_tokens:1500,
+      messages:[{role:'user',content:[
+        {type:'image_url',image_url:{url:`data:${mime};base64,${b64}`,detail:'high'}},
+        {type:'text',text:buildPrompt(cfg)}
+      ]}]
+    })
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'OpenAI error '+r.status);}
+  const d=await r.json();
+  const meta = parseJ(d.choices[0].message.content);
+  // Extract usage from OpenAI response
+  const usage = d.usage || {};
+  meta._usage = {
+    inputTokens: usage.prompt_tokens || 0,
+    outputTokens: usage.completion_tokens || 0,
+    model: cfg.model
+  };
+  return meta;
+}
+
+async function callGemini(key,b64,mime,cfg){
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${key}`,{
+    signal:abortController?.signal,method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{parts:[
+        {inline_data:{mime_type:mime,data:b64}},
+        {text:buildPrompt(cfg)}
+      ]}],
+      generationConfig:{maxOutputTokens:1500,temperature:0.4}
+    })
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Gemini error '+r.status);}
+  const d=await r.json();
+  const txt=d.candidates[0].content.parts.map(p=>p.text||'').join('');
+  const meta = parseJ(txt);
+  // Extract usage from Gemini response
+  const usage = d.usageMetadata || {};
+  meta._usage = {
+    inputTokens: usage.promptTokenCount || 0,
+    outputTokens: usage.candidatesTokenCount || 0,
+    model: cfg.model
+  };
+  return meta;
+}
+
+function parseJ(txt){
+  const c=txt.replace(/```json\n?|```\n?/g,'').trim();
+  // Find first complete JSON object via bracket matching (handles strings correctly)
+  let depth=0,start=-1,jsonStr=null,inStr=false,esc=false;
+  for(let i=0;i<c.length;i++){
+    const ch=c[i];
+    if(esc){esc=false;continue;}
+    if(ch==='\\'){esc=true;continue;}
+    if(ch==='"'){inStr=!inStr;continue;}
+    if(inStr)continue;
+    if(ch==='{'){if(depth===0)start=i;depth++;}
+    if(ch==='}'){depth--;if(depth===0&&start>=0){jsonStr=c.substring(start,i+1);break;}}
+  }
+  if(!jsonStr)throw new Error('Invalid JSON response from AI');
+  const parsed = JSON.parse(jsonStr);
+  // Deduplicate keywords while preserving order
+  if(parsed.keywords && Array.isArray(parsed.keywords)) {
+    const seen = new Set();
+    parsed.keywords = parsed.keywords.filter(k => {
+      const lower = (typeof k === 'string' ? k : k.keyword || '').toLowerCase().trim();
+      if(!lower || seen.has(lower)) return false;
+      seen.add(lower);
+      return true;
+    });
+  }
+  return parsed;
+}
+
+/* ============================
+   TABLE
+   ============================ */
+function charBadge(title, expFmt){
+  const len=title?title.length:0;
+  const sp=PLAT_SPECS[expFmt];
+  if(!sp)return `<span class="char-badge">${len}ch</span>`;
+  let cls='ok';
+  if(len>sp.titleMax)cls='err';
+  else if(sp.titleRec&&len>sp.titleRec)cls='warn';
+  return `<span class="char-badge ${cls}">${len}/${sp.titleMax}ch</span>`;
+}
+
+function appendRow(idx,f,meta,expFmt){
+  const rankedKws = meta.rankedKeywords || assignKeywordRanks(meta.keywords);
+  const kwHTML = buildKeywordHTML(rankedKws, 8);
+  const statsHTML = buildKeywordStatsBar(rankedKws);
+  const costStr = meta._cost != null ? `$${meta._cost.toFixed(4)}` : '—';
+  const tokStr = meta._inputTokens != null ? `${meta._inputTokens}↓ ${meta._outputTokens}↑` : '';
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><div class="td-file">${f.preview?`<img src="${f.preview}" class="td-thumb" onclick="openLightbox('${f.preview.replace(/'/g,"\\'")}',' ${escHTML(f.file.name)}')">`:''}
+      <span class="td-nm" title="${escHTML(f.file.name)}">${escHTML(f.file.name)}</span></div></td>
+    <td class="td-title"><div class="td-title-inner">
+      <div>${escHTML(meta.title)}<button class="copy-btn" onclick="copyText(this,'${escHTML(meta.title).replace(/'/g,"&#39;")}')" title="Copy title">📋</button></div>
+      ${charBadge(meta.title,expFmt)}
+    </div></td>
+    <td class="td-desc">${escHTML(meta.description)}<button class="copy-btn" onclick="copyText(this,this.parentElement.textContent.slice(0,-1))" title="Copy description">📋</button></td>
+    <td><div class="kw-wrap">${kwHTML}</div>${statsHTML}<button class="copy-btn" onclick="copyText(this,'${escHTML(meta.keywords.join(', ')).replace(/'/g,"&#39;")}')" title="Copy keywords">📋</button></td>
+    <td class="td-cost">${costStr}${tokStr?`<span class="cost-tokens">${tokStr}</span>`:''}</td>
+    <td><button class="edit-btn" onclick="regenSingle(${idx})" title="Re-generate this image">🔄</button> <button class="edit-btn" onclick="openEdit(${idx})">✏️ Edit</button></td>`;
+  document.getElementById('resTbody').appendChild(tr);
+}
+
+function rebuildTable(){
+  document.getElementById('resTbody').innerHTML='';
+  const fmt=document.getElementById('expFmt').value;
+  results.forEach((r,i)=>appendRow(i,r,r,fmt));
+}
+
+/* Single image re-generate — saves ~90% API cost vs re-gen all */
+async function regenSingle(idx){
+  if(isGen)return;
+  const key=document.getElementById('apiKey').value.trim();
+  if(!key){notif('Enter your API key','err');return;}
+  const r=results[idx];
+  if(!r)return;
+  isGen=true;
+  abortController=new AbortController();
+  const cfg=getConfig();
+  setDot(r.id,'run');
+  try{
+    const b64=await toB64(r.file);
+    const meta=await callAI(key,b64,r.file.type||'image/jpeg',cfg);
+    meta.rankedKeywords=assignKeywordRanks(meta.keywords);
+    // Track cost for regen
+    if(meta._usage){
+      const costInfo=calcCost(meta._usage.model, meta._usage.inputTokens, meta._usage.outputTokens);
+      meta._cost=costInfo.cost;
+      meta._inputTokens=meta._usage.inputTokens;
+      meta._outputTokens=meta._usage.outputTokens;
+      // Subtract old cost, add new
+      if(r._cost) sessionCost -= r._cost;
+      if(r._inputTokens) sessionInTokens -= r._inputTokens;
+      if(r._outputTokens) sessionOutTokens -= r._outputTokens;
+      sessionCost+=costInfo.cost;
+      sessionInTokens+=meta._usage.inputTokens;
+      sessionOutTokens+=meta._usage.outputTokens;
+      updateCostBar();
+    }
+    results[idx]={...r,...meta};
+    setDot(r.id,'ok');
+    rebuildTable();
+    notif(`Re-generated: ${r.file.name} ✓ ($${(meta._cost||0).toFixed(4)})`,'ok');
+  }catch(e){
+    if(e.name!=='AbortError'){
+      setDot(r.id,'err');
+      notif(`Error: ${r.file.name} — ${e.message}`,'err');
+    }
+  }
+  isGen=false;
+}
+
+/* ============================
+   EDIT MODAL
+   ============================ */
+function openEdit(idx){
+  editIdx=idx;
+  const r=results[idx];
+  document.getElementById('mTitle').value=r.title;
+  document.getElementById('mDesc').value=r.description;
+  document.getElementById('mKw').value=r.keywords.join(', ');
+  updCharCount('mTitle','mTitleCt');
+  updCharCount('mDesc','mDescCt');
+  updKwCount();
+  renderModalKwPreview();
+  document.getElementById('editModal').style.display='flex';
+}
+function closeModal(){document.getElementById('editModal').style.display='none';}
+function bgClose(e){if(e.target.id==='editModal')closeModal();}
+
+function updCharCount(tid,cid){
+  const v=document.getElementById(tid).value;
+  document.getElementById(cid).textContent=v.length+' chars';
+}
+function updKwCount(){
+  const v=document.getElementById('mKw').value;
+  const n=v.split(',').map(x=>x.trim()).filter(Boolean).length;
+  document.getElementById('mKwCt').textContent=n+' keywords';
+}
+
+function renderModalKwPreview(){
+  const v=document.getElementById('mKw').value;
+  const kws=v.split(',').map(x=>x.trim()).filter(Boolean);
+  const ranked=assignKeywordRanks(kws);
+  const container=document.getElementById('mKwPreview');
+  container.innerHTML = ranked.map(k =>
+    `<span class="kw rank-${k.rank}" title="${RANK_LABELS[k.rank]} rank (#${ranked.indexOf(k)+1})"><span class="kw-dot"></span>${escHTML(k.keyword)}</span>`
+  ).join('');
+}
+
+function saveEdit(){
+  if(editIdx<0)return;
+  const newKws = document.getElementById('mKw').value.split(',').map(k=>k.trim()).filter(Boolean);
+  results[editIdx].title=document.getElementById('mTitle').value.trim();
+  results[editIdx].description=document.getElementById('mDesc').value.trim();
+  results[editIdx].keywords=newKws;
+  results[editIdx].rankedKeywords=assignKeywordRanks(newKws);
+  closeModal();
+  rebuildTable();
+  notif('Metadata saved ✓','ok');
+}
+
+/* ============================
+   EXPORT CSV
+   ============================ */
+function exportCSV(){
+  if(!results.length)return;
+  const fmtId=document.getElementById('expFmt').value;
+  const sp=PLAT_SPECS[fmtId];
+  if(!sp){notif('Select an export format','err');return;}
+  
+  // Validate before export
+  const warnings = validateExport(fmtId);
+  if(warnings.length > 0) {
+    const warnEl = document.getElementById('validWarn');
+    document.getElementById('vwCount').textContent = `⚠️ ${warnings.length}`;
+    document.getElementById('vwMsg').textContent = `issue${warnings.length>1?'s':''}: ${warnings.slice(0,3).join(' · ')}${warnings.length>3?' · ...':''}`;
+    warnEl.style.display = 'block';
+  }
+  
+  const cfg={aiGen:togs.aiGen,aiModel:document.getElementById('aiModel').value};
+
+  let csv='\uFEFF'+sp.headers+'\n';
+  results.forEach(r=>{ csv+=sp.buildRow(r,cfg); });
+
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const platName=sp.name.replace(/[^a-z0-9]/gi,'_');
+  a.href=url;
+  a.download=`MetaGen_${platName}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  notif(`CSV exported for ${sp.name} ↓`,'ok');
+}
+
+/* Export CSV for ALL active platforms at once */
+function exportAllCSV(){
+  if(!results.length)return;
+  const cfg={aiGen:togs.aiGen,aiModel:document.getElementById('aiModel').value};
+  const platforms=[...activePlats].filter(id=>PLAT_SPECS[id]);
+  if(!platforms.length){notif('No active platforms','err');return;}
+  let count=0;
+  platforms.forEach((fmtId,i)=>{
+    setTimeout(()=>{
+      const sp=PLAT_SPECS[fmtId];
+      let csv='\uFEFF'+sp.headers+'\n';
+      results.forEach(r=>{csv+=sp.buildRow(r,cfg);});
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      const platName=sp.name.replace(/[^a-z0-9]/gi,'_');
+      a.href=url;
+      a.download=`MetaGen_${platName}_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      count++;
+      if(count===platforms.length)notif(`Exported ${count} CSV files for all platforms ✓`,'ok');
+    },i*500);
+  });
+}
+
+/* ============================
+   NOTIFICATION
+   ============================ */
+function notif(msg,type=''){
+  const el=document.createElement('div');
+  el.className='notif '+(type==='ok'?'ok':type==='err'?'err':'');
+  el.innerHTML=`<span style="font-size:12px">${type==='ok'?'✓':type==='err'?'✕':'ℹ'}</span>${escHTML(msg)}`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3800);
+}
+
+/* ============================
+   COST BAR UPDATE
+   ============================ */
+function updateCostBar(){
+  document.getElementById('costBar').style.display='flex';
+  document.getElementById('cbCount').textContent=sessionCostCount;
+  document.getElementById('cbAvg').textContent=sessionCostCount>0?`$${(sessionCost/sessionCostCount).toFixed(4)}`:'$0.0000';
+  document.getElementById('cbInTok').textContent=sessionInTokens.toLocaleString();
+  document.getElementById('cbOutTok').textContent=sessionOutTokens.toLocaleString();
+  document.getElementById('cbTotal').textContent=`$${sessionCost.toFixed(4)}`;
+}
+
+/* ============================
+   COPY TO CLIPBOARD
+   ============================ */
+function copyText(btn, text){
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.classList.add('copied');
+    setTimeout(()=>btn.classList.remove('copied'), 1200);
+  }).catch(()=>notif('Copy failed','err'));
+}
+
+/* ============================
+   LIGHTBOX PREVIEW
+   ============================ */
+function openLightbox(src, name){
+  document.getElementById('lbImg').src=src;
+  document.getElementById('lbInfo').textContent=name;
+  document.getElementById('lightbox').style.display='flex';
+}
+function closeLightbox(){
+  document.getElementById('lightbox').style.display='none';
+  document.getElementById('lbImg').src='';
+}
+// ESC key closes lightbox and modals
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('lightbox').style.display!=='none') closeLightbox();
+    else if(document.getElementById('editModal').style.display!=='none') closeModal();
+  }
+});
+
+/* ============================
+   EXPORT VALIDATION
+   ============================ */
+function validateExport(fmtId){
+  const sp=PLAT_SPECS[fmtId];
+  if(!sp)return [];
+  const warnings=[];
+  results.forEach(r=>{
+    const tLen=r.title?r.title.length:0;
+    const kLen=r.keywords?r.keywords.length:0;
+    const dLen=r.description?r.description.length:0;
+    if(tLen>sp.titleMax) warnings.push(`${r.file.name}: title too long (${tLen}/${sp.titleMax})`);
+    if(sp.kwMin && kLen<sp.kwMin) warnings.push(`${r.file.name}: too few keywords (${kLen}/${sp.kwMin} min)`);
+    if(sp.kwMax && kLen>sp.kwMax) warnings.push(`${r.file.name}: too many keywords (${kLen}/${sp.kwMax} max)`);
+    if(sp.descCol && sp.descMin && dLen<sp.descMin) warnings.push(`${r.file.name}: description too short (${dLen}/${sp.descMin} min)`);
+    if(sp.descCol && sp.descMax && dLen>sp.descMax) warnings.push(`${r.file.name}: description too long (${dLen}/${sp.descMax} max)`);
+  });
+  return warnings;
+}
+
+/* ============================
+   LOCAL STORAGE
+   ============================ */
+const LS_KEY='metagen_settings';
+
+function saveSettings(){
+  try{
+    const data={
+      provider: curProv,
+      apiKey: document.getElementById('apiKey').value,
+      model: document.getElementById('modelSel').value,
+      rMinTC: document.getElementById('rMinTC').value,
+      rMaxTC: document.getElementById('rMaxTC').value,
+      rMinK: document.getElementById('rMinK').value,
+      rMaxK: document.getElementById('rMaxK').value,
+      rMinDC: document.getElementById('rMinDC').value,
+      rMaxDC: document.getElementById('rMaxDC').value,
+      togs: {...togs},
+      activePlats: [...activePlats],
+      outLang: document.getElementById('outLang').value,
+      expFmt: document.getElementById('expFmt').value,
+      aiModel: document.getElementById('aiModel').value,
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }catch(e){/* silent */}
+}
+
+function loadSettings(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    
+    // Provider
+    if(data.provider && PROVIDERS[data.provider]){
+      const btn=document.querySelector(`[data-p=${data.provider}]`);
+      if(btn) setProvider(data.provider, btn);
+    }
+    
+    // API Key
+    if(data.apiKey) document.getElementById('apiKey').value=data.apiKey;
+    
+    // Model (set after provider since provider changes model list)
+    if(data.model){
+      const sel=document.getElementById('modelSel');
+      if([...sel.options].some(o=>o.value===data.model)) sel.value=data.model;
+    }
+    
+    // Sliders
+    if(data.rMinTC) setSlider('rMinTC','vMinTC',data.rMinTC,'ch');
+    if(data.rMaxTC) setSlider('rMaxTC','vMaxTC',data.rMaxTC,'ch');
+    if(data.rMinK) setSlider('rMinK','vMinK',data.rMinK,'');
+    if(data.rMaxK) setSlider('rMaxK','vMaxK',data.rMaxK,'');
+    if(data.rMinDC) setSlider('rMinDC','vMinDC',data.rMinDC,'ch');
+    if(data.rMaxDC) setSlider('rMaxDC','vMaxDC',data.rMaxDC,'ch');
+    
+    // Toggles
+    if(data.togs){
+      Object.keys(data.togs).forEach(k=>{
+        if(togs[k]!==data.togs[k]) togSw(k);
+      });
+    }
+    
+    // Active platforms
+    if(data.activePlats){
+      activePlats=new Set(data.activePlats);
+      PLATS.forEach(p=>{
+        const el=document.getElementById('pl-'+p.id);
+        if(el) el.classList.toggle('on', activePlats.has(p.id));
+      });
+      document.getElementById('freepikBlk').style.display=activePlats.has('Freepik')?'':'none';
+      renderExpFmt();
+    }
+    
+    // Output language
+    if(data.outLang) document.getElementById('outLang').value=data.outLang;
+    
+    // Export format
+    if(data.expFmt){
+      const sel=document.getElementById('expFmt');
+      if([...sel.options].some(o=>o.value===data.expFmt)) sel.value=data.expFmt;
+      renderPlatInfo();
+    }
+    
+    // AI Model (Freepik)
+    if(data.aiModel) document.getElementById('aiModel').value=data.aiModel;
+    
+  }catch(e){/* silent */}
+}
+
+// Auto-save on settings changes
+['rMinTC','rMaxTC','rMinK','rMaxK','rMinDC','rMaxDC'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', saveSettings);
+});
+['modelSel','outLang','expFmt','aiModel'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', saveSettings);
+});
+document.getElementById('apiKey').addEventListener('change', saveSettings);
+
+// Override togSw to also save
+const _origTogSw = togSw;
+togSw = function(id){
+  _origTogSw(id);
+  saveSettings();
+};
+
+// Override togPlat to also save
+const _origTogPlat = togPlat;
+togPlat = function(id,el){
+  _origTogPlat(id,el);
+  saveSettings();
+};
+
+/* ============================
+   START
+   ============================ */
+function init() {
+  initPlats();
+  setProvider('claude', document.querySelector('[data-p=claude]'));
+  renderExpFmt();
+  renderPlatInfo();
+  loadSettings();
+}
+init();
+</script>
+</body>
+</html>
